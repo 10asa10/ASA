@@ -1,0 +1,368 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rester en Santé - Votre Guide Médical Grand Public</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        header {
+            background-color: #1a3c34;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            font-size: 2.5em;
+        }
+        nav {
+            background-color: #2e5e56;
+            padding: 10px 0;
+        }
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        nav a:hover {
+            color: #f4c430;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://via.placeholder.com/1200x400') center/cover;
+            color: white;
+            padding: 50px 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .search-bar {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .search-bar input {
+            padding: 10px;
+            width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 5px 0 0 5px;
+        }
+        .search-bar button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #f4c430;
+            color: white;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+        }
+        .categories {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .category {
+            background-color: #e1e8ed;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .category:hover {
+            background-color: #d1dce5;
+        }
+        .article-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .article-card {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .article-card:hover {
+            transform: translateY(-5px);
+        }
+        .article-card h3 {
+            margin: 0 0 10px;
+            color: #1a3c34;
+        }
+        .article-card p {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        .newsletter {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .newsletter input {
+            padding: 10px;
+            width: 200px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .newsletter button {
+            padding: 10px 20px;
+            background-color: #f4c430;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .faq, .resources {
+            margin: 20px 0;
+        }
+        .faq h2, .resources h2 {
+            margin-bottom: 10px;
+        }
+        .faq details {
+            margin-bottom: 10px;
+        }
+        .resources ul {
+            list-style: none;
+        }
+        .resources a {
+            color: #1a3c34;
+            text-decoration: none;
+        }
+        .resources a:hover {
+            text-decoration: underline;
+        }
+        footer {
+            background-color: #1a3c34;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 20px;
+        }
+        @media (max-width: 600px) {
+            nav ul {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .article-list {
+                grid-template-columns: 1fr;
+            }
+            .search-bar input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Rester en Santé</h1>
+        <p>Votre guide médical fiable et accessible</p>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="#accueil">Accueil</a></li>
+            <li><a href="#articles">Articles</a></li>
+            <li><a href="#categories">Catégories</a></li>
+            <li><a href="#a-propos">À Propos</a></li>
+            <li><a href="#contact">Contact</a></li>
+            <li><a href="#faq">FAQ</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <section id="accueil" class="hero">
+            <h2>Bienvenue sur Rester en Santé</h2>
+            <p>Explorez des articles médicaux clairs et fiables pour mieux comprendre votre santé.</p>
+        </section>
+
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Rechercher un article...">
+            <button onclick="searchArticles()">Rechercher</button>
+        </div>
+
+        <section id="categories">
+            <h2>Catégories</h2>
+            <div class="categories">
+                <div class="category" onclick="filterArticles('all')">Tout</div>
+                <div class="category" onclick="filterArticles('cardio')">Cardiologie</div>
+                <div class="category" onclick="filterArticles('nutrition')">Nutrition</div>
+                <div class="category" onclick="filterArticles('mental')">Santé Mentale</div>
+            </div>
+        </section>
+
+        <section id="articles">
+            <h2>Articles Récents</h2>
+            <div class="article-list" id="articleList">
+                <div class="article-card" data-category="cardio">
+                    <h3>Comprendre l'hypertension</h3>
+                    <p>Causes, symptômes et conseils pour gérer la pression artérielle.</p>
+                </div>
+                <div class="article-card" data-category="nutrition">
+                    <h3>Boostez votre immunité</h3>
+                    <p>Des astuces naturelles pour renforcer vos défenses.</p>
+                </div>
+                <div class="article-card" data-category="mental">
+                    <h3>Le stress et vous</h3>
+                    <p>Comment gérer le stress au quotidien.</p>
+                </div>
+                <div class="article-card" data-category="cardio">
+                    <h3>Les maladies cardiovasculaires</h3>
+                    <p>Prévention et traitement des maladies du cœur.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="newsletter">
+            <h2>Inscrivez-vous à notre Newsletter</h2>
+            <input type="email" id="newsletterEmail" placeholder="Votre email">
+            <button onclick="subscribeNewsletter()">S'inscrire</button>
+            <p id="newsletterMessage"></p>
+        </section>
+
+        <section id="a-propos">
+            <h2>À Propos de Nous</h2>
+            <p>Rester en Santé est une plateforme dédiée à l'éducation médicale grand public. Nous collaborons avec des experts pour fournir des informations fiables et accessibles.</p>
+        </section>
+
+        <section id="contact">
+            <h2>Contactez-nous</h2>
+            <div>
+                <input type="text" id="contactName" placeholder="Votre nom"><br><br>
+                <input type="email" id="contactEmail" placeholder="Votre email"><br><br>
+                <textarea id="contactMessage" placeholder="Votre message" rows="5" style="width: 100%;"></textarea><br><br>
+                <button onclick="sendMessage()">Envoyer</button>
+                <p id="contactResponse"></p>
+            </div>
+        </section>
+
+        <section id="faq" class="faq">
+            <h2>Questions Fréquentes</h2>
+            <details>
+                <summary>Les informations sont-elles fiables ?</summary>
+                <p>Oui, tous nos articles sont rédigés ou validés par des professionnels de santé.</p>
+            </details>
+            <details>
+                <summary>Puis-je demander un sujet d'article ?</summary>
+                <p>Bien sûr ! Contactez-nous via la section Contact.</p>
+            </details>
+        </section>
+
+        <section class="resources">
+            <h2>Ressources Utiles</h2>
+            <ul>
+                <li><a href="https://www.who.int/fr" target="_blank">Organisation Mondiale de la Santé (OMS)</a></li>
+                <li><a href="https://www.santepubliquefrance.fr/" target="_blank">Santé Publique France</a></li>
+            </ul>
+        </section>
+    </div>
+    <footer>
+        <p>© 2025 Rester en Santé. Tous droits réservés. | <a href="#mentions" style="color: #f4c430;">Mentions Légales</a></p>
+    </footer>
+
+    <script>
+        function searchArticles() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const articles = document.querySelectorAll('.article-card');
+            articles.forEach(article => {
+                const title = article.querySelector('h3').textContent.toLowerCase();
+                article.style.display = title.includes(searchInput) ? 'block' : 'none';
+            });
+        }
+
+        function filterArticles(category) {
+            const articles = document.querySelectorAll('.article-card');
+            articles.forEach(article => {
+                const articleCategory = article.getAttribute('data-category');
+                article.style.display = (category === 'all' || articleCategory === category) ? 'block' : 'none';
+            });
+        }
+
+        function subscribeNewsletter() {
+            const email = document.getElementById('newsletterEmail').value;
+            const message = document.getElementById('newsletterMessage');
+            if (email) {
+                message.textContent = "Merci pour votre inscription !";
+                message.style.color = "green";
+            } else {
+                message.textContent = "Veuillez entrer un email valide.";
+                message.style.color = "red";
+            }
+        }
+
+        function sendMessage() {
+            const name = document.getElementById('contactName').value;
+            const email = document.getElementById('contactEmail').value;
+            const message = document.getElementById('contactMessage').value;
+            const response = document.getElementById('contactResponse');
+            if (name && email && message) {
+                response.textContent = "Message envoyé avec succès !";
+                response.style.color = "green";
+            } else {
+                response.textContent = "Veuillez remplir tous les champs.";
+                response.style.color = "red";
+            }
+        }
+    </script>
+</body>
+</html>
